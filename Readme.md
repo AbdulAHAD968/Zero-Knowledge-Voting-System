@@ -10,102 +10,178 @@
 
 ---
 
-## 🔒 The Paradox of Privacy
-Traditional voting systems rely on a "Trusted Authority" to keep voter identities separate from their ballots. SecureZK eliminates this single point of failure using mathematical proofs.
+## 🔒 The Problem
+Every digital voting system faces the same tension: to prevent fraud, the server must know *who* voted, but knowing who voted destroys anonymity. Traditional systems resolve this by trusting a central authority to keep the two pieces of information separate. That trust is the attack surface.
 
-- **Anonymity**: Your identity is never transmitted. Only a cryptographic proof of eligibility reaches the server.
-- **Integrity**: Every vote is mathematically tied to a registered constituency's Merkle Root.
-- **Double-Vote Protection**: A unique "Nullifier" fingerprint is derived from your secret, ensuring one person = one vote, without linking it back to your name.
+This project eliminates the need for that trust entirely using zero-knowledge cryptography.
 
 ---
 
-## 🚀 Key Features
+## 🚀 How It Works
 
-### 1. Anonymous Proving
-Voters generate a **Groth16 ZK-Proof** locally in their browser. The private secret never leaves their device. The server only receives the "YES/NO" answer to the question: *"Are you a registered voter who hasn't voted yet?"*
+### The Core Idea
+A voter's identity is represented as a leaf in a Merkle tree. To vote, the voter generates a ZK proof that says:
+
+> "I know a secret that hashes to a leaf inside this tree, and here is a unique fingerprint derived from that secret -- but I will not tell you which leaf I am."
+
+The server learns:
+- The voter is registered (the proof is valid against the official Merkle root)
+- The voter has not voted before (the nullifier is fresh)
+- The vote value
+
+### Step-by-Step Flow
+```text
+Voter's Device                          Server (Port 5000)
+
+1. Load certificate (JSON)
+   - secret (private)
+   - merklePath[3] (private)
+   - pathIndices[3] (private)
+   - merkleRoot (public)
+
+2. Select constituency + candidate
+
+3. Generate Groth16 proof (in-browser WASM)
+   - Hash secret via Poseidon(1)     -> leaf
+   - Reconstruct root via path       -> must match merkleRoot
+   - Hash (secret, 12345)            -> nullifierHash
+   - Proof generated locally; secret never transmitted
+
+4. POST /verify-vote
+   { proof, publicSignals, candidate, constituency }
+                                      5. Check nullifierHash not in DB
+                                         -> reject if seen before
+
+                                      6. Verify Groth16 proof against
+                                         verification_key.json
+                                         -> reject if invalid
+
+                                      7. Validate publicSignals[1]
+                                         (merkleRoot) matches the
+                                         official root for the claimed
+                                         constituency
+                                         -> reject if mismatched
+
+                                      8. Save nullifier + ballot to MongoDB
+                                         -> return { success: true }
+```
 
 ![Voting Console](docs/2.png)
 
-### 2. Merkle Tree Visualization
-Explore the constituency's cryptographic structure in real-time. Watch the Merkle path light up as you verify your certificate.
-- **Dynamic Roots**: Each city (Lahore, Karachi, Islamabad) maintains its own independent Merkle tree.
-- **Live Nullifier Feed**: Transparently track used fingerprints to ensure election integrity.
+---
+
+## 🏛️ Architecture & Project Structure
+
+```text
+zK-Voting-System/
+|
+|-- circuits/                   ZK circuit source and compiled artifacts
+|   |-- vote.circom             Circuit logic (Circom 2.0)
+|   |-- vote.r1cs               Compiled constraint system (R1CS format)
+|   |-- vote.sym                Debug symbol table
+|   |-- verification_key.json   Public key used by server to verify proofs
+|   |-- vote_js/                Browser-side witness calculator
+|   |   |-- vote.wasm           Compiled circuit (WebAssembly)
+|   |   |-- witness_calculator.js
+|
+|-- backend/
+|   |-- server.js               Express API, Merkle tree builder, ZK verifier
+|   |-- issue_certs.js          Generates constituency trees and voter certificates
+|   |-- verification_key.json   Copy of circuits/verification_key.json
+|
+|-- frontend/
+|   |-- src/
+|   |   |-- App.js              Root router
+|   |   |-- pages/
+|   |   |   |-- Home.js         Voting page: cert upload, proof generation, results
+|   |   |   |-- MerkleExplorer.js   Visual tree dashboard, live nullifier feed
+|   |-- public/
+|   |   |-- zk-assets/
+|   |   |   |-- vote.wasm       Circuit compiled to WASM (copy from circuits/)
+|   |   |   |-- vote_0001.zkey  Proving key (from trusted setup)
+|
+|-- docs/                       Visual assets and screenshots
+```
+
+---
+
+## 🔐 The Cryptographic Core (`/circuits`)
+
+In ZK-SNARKs, a "circuit" is a program expressed as a system of arithmetic constraints. `vote.circom` wires together three checks into a single provable statement:
+
+| Step | Operation | Purpose |
+|------|-----------|---------|
+| 1 | `leaf = Poseidon(secret)` | Derives the voter's leaf from their private secret |
+| 2 | `Verifier(3)` | Proves the leaf exists in the official Merkle tree |
+| 3 | `nullifierHash === Poseidon(secret, 12345)` | Binds the double-vote fingerprint to the same secret |
+| 4 | `voteOut <== vote` | Passes the vote choice as a public output |
+
+### Why you cannot change the circuit without recompiling
+`verification_key.json` and `vote_0001.zkey` are mathematically bound to the exact constraint system in `vote.r1cs`. Changing one line of `vote.circom` produces a different R1CS, which invalidates all existing keys. This ensures that no one can silently alter the voting logic once the keys are generated.
+
+---
+
+## 🌳 Merkle Explorer
+A visual dashboard at `/explorer` that renders the full tree for any constituency as an SVG pyramid. Upload a certificate to highlight the proof path in green.
 
 ![Merkle Explorer](docs/3.png)
 
-### 3. Multi-Constituency Isolation
-The system handles multiple voting regions simultaneously. A voter registered in Lahore cannot cast a ballot in the Karachi constituency, as the server validates the embedded Merkle Root against the official registry.
-
 ---
 
-## 🛠️ Technology Stack
-- **Cryptography**: Circom 2.1, SnarkJS (Groth16)
-- **Hashing**: Poseidon (Optimized for ZK circuits)
-- **Frontend**: React.js, SnarkJS-WASM
-- **Backend**: Node.js, Express, MongoDB (Dockerized)
-- **Styling**: Vanilla CSS (Premium Clay-inspired design)
-
----
-
-## 🚦 Quick Start
+## 🚦 Setup & Installation
 
 ### 1. Prerequisites
-- **Node.js** (v18+)
-- **Docker** (for MongoDB)
-- **Git**
+- Node.js v20+
+- Docker (for MongoDB)
+- npm
 
-### 2. Installation
+### 2. Install all dependencies
 ```bash
-# Clone the repository
-git clone https://github.com/AbdulAHAD968/Zero-Knowledge-Voting-System.git
-cd Zero-Knowledge-Voting-System
-
-# Install all dependencies
 npm run install:all
 ```
 
-### 3. Launch the Platform
+### 3. Start MongoDB
 ```bash
-# Start MongoDB
 docker run -d -p 27017:27017 --name mongodb mongo
+```
 
-# Generate voter certificates (24 unique identities)
+### 4. Generate voter certificates
+```bash
 cd backend
 node issue_certs.js
+```
+This creates **24 unique identity files** (8 per constituency) in the `certs/` folder.
 
-# Start the full stack
+### 5. Start the full stack
+```bash
 cd ..
 npm run dev
 ```
-
----
-
-## 📂 Project Structure
-```text
-├── circuits/           # Circom source code and ZK artifacts (.zkey, .wasm)
-├── backend/            # Express verifier node and certificate issuer
-├── frontend/           # React application and ZK-prover integration
-├── certs/              # Sample voter certificates for testing
-└── docs/               # Visual documentation assets
-```
+Frontend: `http://localhost:3000` | Backend API: `http://localhost:5000`
 
 ---
 
 ## 📜 Security Model
-| Threat | Mitigation Strategy |
-| :--- | :--- |
-| **Identity Leak** | Private secrets are processed via Poseidon hashing; only proofs are shared. |
-| **Double Voting** | Nullifiers are stored in MongoDB; duplicates are rejected instantly. |
-| **Fake Registration** | Every proof must match the official constituency Merkle Root. |
-| **Data Tampering** | Circuits are mathematically bound to the R1CS constraint system. |
+| Threat | Mitigation |
+|--------|-----------|
+| **Server learns voter identity** | Server only sees nullifier hash and proof, never the secret or leaf index |
+| **Voter votes twice** | Nullifier stored after first vote; duplicate rejected before proof verification |
+| **Voter forges membership** | Invalid Merkle path produces wrong root; Groth16 verification fails |
+| **Constituency Crossing** | Server checks `publicSignals[1]` against the official root for the claimed constituency |
 
 ---
 
-## 🤝 Contributing
-We welcome contributions to our ZK-circuits and security protocols. Please open an issue or submit a pull request.
-
-**License**: Distributed under the MIT License. See `LICENSE` for more information.
+## 🔄 Recompiling the Circuit
+Only needed if `vote.circom` is modified.
+```bash
+cd circuits
+# Requires Circom compiler
+circom vote.circom --wasm --r1cs --sym
+snarkjs groth16 setup vote.r1cs pot12_final.ptau vote_0000.zkey
+snarkjs zkey contribute vote_0000.zkey vote_0001.zkey --name="contributor"
+snarkjs zkey export verificationkey vote_0001.zkey verification_key.json
+```
 
 ---
 
-*Built with ❤️ by the SecureZK Team.*
+*Built with ❤️ for democratic integrity and cryptographic privacy.*
