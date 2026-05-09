@@ -4,20 +4,20 @@
 [![ZK-SNARKS](https://img.shields.io/badge/Cryptography-ZK--SNARKs-blueviolet)](https://snarkjs.herokuapp.com/)
 [![MongoDB](https://img.shields.io/badge/Database-MongoDB-green)](https://www.mongodb.com/)
 
-**SecureZK** is an industrial-grade, privacy-preserving digital voting system. It utilizes **ZK-SNARKs (Groth16)** to solve the fundamental paradox of electronic voting: ensuring only registered voters can vote, exactly once, without ever revealing who voted for whom.
+SecureZK is an industrial-grade, privacy-preserving digital voting system. It utilizes ZK-SNARKs (Groth16) to solve the fundamental paradox of electronic voting: ensuring only registered voters can vote, exactly once, without ever revealing who voted for whom.
 
 ![Landing Page](docs/1.png)
 
 ---
 
-## 🔒 The Problem
-Every digital voting system faces the same tension: to prevent fraud, the server must know *who* voted, but knowing who voted destroys anonymity. Traditional systems resolve this by trusting a central authority to keep the two pieces of information separate. That trust is the attack surface.
+## The Problem
+Every digital voting system faces the same tension: to prevent fraud, the server must know who voted, but knowing who voted destroys anonymity. Traditional systems resolve this by trusting a central authority to keep the two pieces of information separate. That trust is the attack surface.
 
 This project eliminates the need for that trust entirely using zero-knowledge cryptography.
 
 ---
 
-## 🚀 How It Works
+## How It Works
 
 ### The Core Idea
 A voter's identity is represented as a leaf in a Merkle tree. To vote, the voter generates a ZK proof that says:
@@ -70,7 +70,7 @@ Voter's Device                          Server (Port 5000)
 
 ---
 
-## 🏛️ Architecture & Project Structure
+## Architecture & Project Structure
 
 ```text
 zK-Voting-System/
@@ -105,30 +105,30 @@ zK-Voting-System/
 
 ---
 
-## 🔐 The Cryptographic Core (`/circuits`)
+## The Cryptographic Core (/circuits)
 
-In ZK-SNARKs, a "circuit" is a program expressed as a system of arithmetic constraints. `vote.circom` wires together three checks into a single provable statement:
+In ZK-SNARKs, a "circuit" is a program expressed as a system of arithmetic constraints. vote.circom wires together three checks into a single provable statement:
 
 | Step | Operation | Purpose |
 |------|-----------|---------|
-| 1 | `leaf = Poseidon(secret)` | Derives the voter's leaf from their private secret |
-| 2 | `Verifier(3)` | Proves the leaf exists in the official Merkle tree |
-| 3 | `nullifierHash === Poseidon(secret, 12345)` | Binds the double-vote fingerprint to the same secret |
-| 4 | `voteOut <== vote` | Passes the vote choice as a public output |
+| 1 | leaf = Poseidon(secret) | Derives the voter's leaf from their private secret |
+| 2 | Verifier(3) | Proves the leaf exists in the official Merkle tree |
+| 3 | nullifierHash === Poseidon(secret, 12345) | Binds the double-vote fingerprint to the same secret |
+| 4 | voteOut <== vote | Passes the vote choice as a public output |
 
 ### Why you cannot change the circuit without recompiling
-`verification_key.json` and `vote_0001.zkey` are mathematically bound to the exact constraint system in `vote.r1cs`. Changing one line of `vote.circom` produces a different R1CS, which invalidates all existing keys. This ensures that no one can silently alter the voting logic once the keys are generated.
+verification_key.json and vote_0001.zkey are mathematically bound to the exact constraint system in vote.r1cs. Changing one line of vote.circom produces a different R1CS, which invalidates all existing keys. This ensures that no one can silently alter the voting logic once the keys are generated.
 
 ---
 
-## 🌳 Merkle Explorer
-A visual dashboard at `/explorer` that renders the full tree for any constituency as an SVG pyramid. Upload a certificate to highlight the proof path in green.
+## Merkle Explorer
+A visual dashboard at /explorer that renders the full tree for any constituency as an SVG pyramid. Upload a certificate to highlight the proof path in green.
 
 ![Merkle Explorer](docs/3.png)
 
 ---
 
-## 🚦 Setup & Installation
+## Setup & Installation
 
 ### 1. Prerequisites
 - Node.js v20+
@@ -150,29 +150,29 @@ docker run -d -p 27017:27017 --name mongodb mongo
 cd backend
 node issue_certs.js
 ```
-This creates **24 unique identity files** (8 per constituency) in the `certs/` folder.
+This creates 24 unique identity files (8 per constituency) in the certs/ folder.
 
 ### 5. Start the full stack
 ```bash
 cd ..
 npm run dev
 ```
-Frontend: `http://localhost:3000` | Backend API: `http://localhost:5000`
+Frontend: http://localhost:3000 | Backend API: http://localhost:5000
 
 ---
 
-## 📜 Security Model
+## Security Model
 | Threat | Mitigation |
 |--------|-----------|
-| **Server learns voter identity** | Server only sees nullifier hash and proof, never the secret or leaf index |
-| **Voter votes twice** | Nullifier stored after first vote; duplicate rejected before proof verification |
-| **Voter forges membership** | Invalid Merkle path produces wrong root; Groth16 verification fails |
-| **Constituency Crossing** | Server checks `publicSignals[1]` against the official root for the claimed constituency |
+| Server learns voter identity | Server only sees nullifier hash and proof, never the secret or leaf index |
+| Voter votes twice | Nullifier stored after first vote; duplicate rejected before proof verification |
+| Voter forges membership | Invalid Merkle path produces wrong root; Groth16 verification fails |
+| Constituency Crossing | Server checks publicSignals[1] against the official root for the claimed constituency |
 
 ---
 
-## 🔄 Recompiling the Circuit
-Only needed if `vote.circom` is modified.
+## Recompiling the Circuit
+Only needed if vote.circom is modified.
 ```bash
 cd circuits
 # Requires Circom compiler
@@ -184,4 +184,4 @@ snarkjs zkey export verificationkey vote_0001.zkey verification_key.json
 
 ---
 
-*Built with ❤️ for democratic integrity and cryptographic privacy.*
+*Built for democratic integrity and cryptographic privacy.*
