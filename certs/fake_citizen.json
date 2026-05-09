@@ -1,0 +1,14 @@
+{
+  "voterName": "Hacker-01",
+  "constituencyId": "lahore",
+  "constituencyName": "Lahore (NA-120)",
+  "secret": "99999999",
+  "nullifierHash": "12345678901234567890",
+  "merklePath": [
+    "0",
+    "0",
+    "0"
+  ],
+  "pathIndices": [0, 0, 0],
+  "merkleRoot": "99999999999999999999999999999999999999999999999999999999999999999999999999999"
+}

@@ -1,0 +1,46 @@
+{
+  "constituencies": [
+    {
+      "id": "lahore",
+      "name": "Lahore (NA-120)",
+      "voters": [
+        { "voterName": "Citizen-01", "secret": "1111" },
+        { "voterName": "Citizen-02", "secret": "2222" },
+        { "voterName": "Citizen-03", "secret": "3333" },
+        { "voterName": "Citizen-04", "secret": "4444" },
+        { "voterName": "Citizen-13", "secret": "1313" },
+        { "voterName": "Citizen-14", "secret": "1414" },
+        { "voterName": "Citizen-15", "secret": "1515" },
+        { "voterName": "Citizen-16", "secret": "1616" }
+      ]
+    },
+    {
+      "id": "karachi",
+      "name": "Karachi (NA-243)",
+      "voters": [
+        { "voterName": "Citizen-05", "secret": "5555" },
+        { "voterName": "Citizen-06", "secret": "6666" },
+        { "voterName": "Citizen-07", "secret": "7777" },
+        { "voterName": "Citizen-08", "secret": "8888" },
+        { "voterName": "Citizen-17", "secret": "1717" },
+        { "voterName": "Citizen-18", "secret": "1818" },
+        { "voterName": "Citizen-19", "secret": "1919" },
+        { "voterName": "Citizen-20", "secret": "2020" }
+      ]
+    },
+    {
+      "id": "islamabad",
+      "name": "Islamabad (NA-52)",
+      "voters": [
+        { "voterName": "Citizen-09", "secret": "9999" },
+        { "voterName": "Citizen-10", "secret": "1010" },
+        { "voterName": "Citizen-11", "secret": "1101" },
+        { "voterName": "Citizen-12", "secret": "1212" },
+        { "voterName": "Citizen-21", "secret": "2121" },
+        { "voterName": "Citizen-22", "secret": "2222" },
+        { "voterName": "Citizen-23", "secret": "2323" },
+        { "voterName": "Citizen-24", "secret": "2424" }
+      ]
+    }
+  ]
+}

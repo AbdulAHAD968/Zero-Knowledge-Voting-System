@@ -1,0 +1,17 @@
+node_modules/
+.DS_Store
+.env
+build/
+backend/build/
+backend/*.json
+!backend/constituency_config.json
+!backend/package.json
+!backend/voter_registry.json
+!backend/verification_key.json
+circuits/pot12_final.ptau
+circuits/vote_0000.zkey
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.tempmediaStorage/
